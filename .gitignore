@@ -1,0 +1,8 @@
+node_modules/
+dist/
+release/
+
+# результаты smoke-прогонов
+.smoke-notes/
+smoke-*.png
+smoke.pdf

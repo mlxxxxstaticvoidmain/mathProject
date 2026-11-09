@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'none'">
+  <title>Численные методы</title>
+  <link rel="stylesheet" href="vendor/katex.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="app" class="mode-split">
+  <aside id="sidebar">
+    <div class="brand">
+      <div class="brand-logo">∫</div>
+      <div class="brand-text">
+        <strong>Численные методы</strong>
+        <span>конспекты</span>
+      </div>
+    </div>
+
+    <button id="btn-new" class="new-note">
+      <span class="plus">+</span> Новый конспект
+    </button>
+
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input id="search" type="text" placeholder="Поиск по названию" autocomplete="off" spellcheck="false">
+    </div>
+
+    <nav id="notes-list" class="notes-list"></nav>
+
+    <div class="sidebar-footer">
+      <button id="btn-open-folder" title="Открыть папку с файлами конспектов">Папка</button>
+      <button id="btn-theme" title="Светлая / тёмная тема (Ctrl+Shift+L)">Тема</button>
+    </div>
+  </aside>
+
+  <main id="main">
+    <header id="topbar">
+      <input id="note-title" class="note-title" type="text" spellcheck="false" placeholder="Название конспекта">
+      <span id="save-status" class="save-status">Сохранено</span>
+
+      <div class="view-switch" role="group" aria-label="Режим просмотра">
+        <button type="button" data-mode="edit" title="Только редактор (Ctrl+1)">✎</button>
+        <button type="button" data-mode="split" class="active" title="Редактор и просмотр (Ctrl+2)">◫</button>
+        <button type="button" data-mode="read" title="Только чтение (Ctrl+3)">▤</button>
+      </div>
+
+      <button id="btn-export" class="ghost-btn" title="Экспорт в PDF (Ctrl+E)">PDF</button>
+    </header>
+
+    <div id="toolbar">
+      <div class="tb-group">
+        <button class="tb" data-before="**" data-after="**" title="Жирный (Ctrl+B)"><b>B</b></button>
+        <button class="tb" data-before="*" data-after="*" title="Курсив (Ctrl+I)"><i>I</i></button>
+        <button class="tb" data-before="## " data-after="" title="Заголовок">H</button>
+        <button class="tb" data-before="\n&gt; " data-after="" title="Цитата">❝</button>
+        <button class="tb" data-before="\n- " data-after="" title="Список">≡</button>
+        <button class="tb" data-before="\n| " data-after=" |  |\n| --- | --- |\n|  |  |\n" title="Таблица">▦</button>
+      </div>
+
+      <div class="tb-sep"></div>
+
+      <div class="tb-group">
+        <button class="tb" data-math="1" data-before="^{" data-after="}" title="Степень: x^{2}">x²</button>
+        <button class="tb" data-math="1" data-before="_{" data-after="}" title="Индекс: x_{i}">xᵢ</button>
+        <button class="tb" data-math="1" data-before="\sqrt{" data-after="}" title="Корень">√</button>
+        <button class="tb" data-math="1" data-before="\frac{" data-after="}{}" title="Дробь">a⁄b</button>
+        <button class="tb" data-math="1" data-before="\sum_{i=1}^{n} " data-after="" title="Сумма">∑</button>
+        <button class="tb" data-math="1" data-before="\int_{a}^{b} " data-after="\,dx" title="Интеграл">∫</button>
+        <button class="tb" data-math="1" data-before="\left(" data-after="\right)" title="Скобки">( )</button>
+        <button class="tb" data-math="1" data-before="\begin{cases}\n" data-after="\n\end{cases}" title="Система (cases)">{</button>
+      </div>
+
+      <div class="tb-sep"></div>
+
+      <div class="tb-group">
+        <button class="tb" id="btn-insert-math" title="Формула отдельной строкой (Ctrl+Shift+M)">$$</button>
+        <button class="tb" id="btn-insert-plot" title="График (Ctrl+Shift+P)">📈</button>
+      </div>
+
+      <div class="tb-spacer"></div>
+
+      <button id="btn-builder" class="tb accent" title="Конструктор записи (Ctrl+Shift+B)">🧩 Конструктор</button>
+      <button id="btn-calc" class="tb accent" title="Калькулятор (Ctrl+Shift+C)">🧮 Калькулятор</button>
+      <button id="btn-palette" class="tb accent" title="Палитра формул (Ctrl+Shift+K)">∑ Палитра</button>
+      <button id="btn-help" class="tb round" title="Шпаргалка (F1)">?</button>
+    </div>
+
+    <div id="work">
+      <section id="editor-pane">
+        <div id="findbar" class="findbar hidden">
+          <input id="find-input" type="text" placeholder="Найти в тексте…" autocomplete="off" spellcheck="false">
+          <span id="find-count" class="find-count">0/0</span>
+          <button id="find-prev" type="button" title="Предыдущее (Shift+Enter)">↑</button>
+          <button id="find-next" type="button" title="Следующее (Enter)">↓</button>
+          <button id="find-close" type="button" title="Закрыть (Esc)">×</button>
+        </div>
+        <textarea id="editor" spellcheck="false" autocomplete="off" autocorrect="off"
+                  autocapitalize="off" placeholder="Пишите конспект здесь…"></textarea>
+      </section>
+
+      <div id="divider" title="Потяните, чтобы изменить ширину"></div>
+
+      <section id="preview-pane">
+        <article id="preview" class="markdown-body"></article>
+      </section>
+    </div>
+
+    <footer id="statusbar">
+      <span id="stat-words">0 слов</span>
+      <span id="stat-cursor">Стр 1, кол 1</span>
+      <span class="status-hint">Ctrl+M — формула · Ctrl+Shift+B — конструктор · Ctrl+Shift+C — калькулятор · F1 — шпаргалка</span>
+    </footer>
+  </main>
+</div>
+
+<div id="palette" class="palette hidden" aria-hidden="true">
+  <div class="palette-head">
+    <strong>Палитра формул</strong>
+    <button id="palette-close" class="icon-btn" title="Закрыть">×</button>
+  </div>
+  <div class="palette-tabs" id="palette-tabs">
+    <button type="button" data-tab="basic" class="active">База</button>
+    <button type="button" data-tab="ops">Операторы</button>
+    <button type="button" data-tab="greek">Греческие</button>
+    <button type="button" data-tab="struct">Структуры</button>
+    <button type="button" data-tab="methods">Методы</button>
+  </div>
+  <div class="palette-body" id="palette-body"></div>
+</div>
+
+<div id="help-modal" class="modal hidden" aria-hidden="true">
+  <div class="modal-backdrop" data-close="help"></div>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="help-title">
+    <div class="modal-head">
+      <h2 id="help-title">Шпаргалка</h2>
+      <button class="icon-btn" data-close="help" title="Закрыть">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="quick-start">
+        <h3>Простая запись</h3>
+        <p><b>Не нужно помнить LaTeX.</b> Нажмите <b>«Конструктор»</b> на панели инструментов, выберите «Дробь», «Корень», «Интеграл» и заполните поля. Внизу сразу видно, как будет выглядеть формула, а кнопка «Вставить блоком» добавит её в конспект.</p>
+        <p>Готовые формулы в один клик есть в <b>«Палитре»</b>. Считать обычные выражения умеет <b>«Калькулятор»</b>: <code>2 + 2*3</code>, <code>sqrt(16) + sin(pi/2)</code>.</p>
+      </div>
+
+      <h3>Формулы вручную</h3>
+      <p>Формула в строке — между двумя знаками доллара, отдельной строкой — между двумя парами:</p>
+      <pre><code>Сходимость: $|x_n - x^*| &lt; \varepsilon$
+
+$$
+x_{k+1} = x_k - \frac{f(x_k)}{f'(x_k)}
+$$</code></pre>
+
+      <table>
+        <thead><tr><th>Что нужно</th><th>Как написать</th><th>Результат</th></tr></thead>
+        <tbody>
+          <tr><td>Степень</td><td><code>x^{2}</code></td><td><span class="mini-math" data-tex="x^{2}"></span></td></tr>
+          <tr><td>Индекс</td><td><code>x_{i}</code></td><td><span class="mini-math" data-tex="x_{i}"></span></td></tr>
+          <tr><td>Индекс и степень</td><td><code>x_i^{2}</code></td><td><span class="mini-math" data-tex="x_i^{2}"></span></td></tr>
+          <tr><td>Дробь</td><td><code>\frac{a}{b}</code></td><td><span class="mini-math" data-tex="\frac{a}{b}"></span></td></tr>
+          <tr><td>Корень</td><td><code>\sqrt{x}</code>, <code>\sqrt[n]{x}</code></td><td><span class="mini-math" data-tex="\sqrt[n]{x}"></span></td></tr>
+          <tr><td>Сумма</td><td><code>\sum_{i=1}^{n} a_i</code></td><td><span class="mini-math" data-tex="\sum_{i=1}^{n} a_i"></span></td></tr>
+          <tr><td>Интеграл</td><td><code>\int_a^b f(x)\,dx</code></td><td><span class="mini-math" data-tex="\int_a^b f(x)\,dx"></span></td></tr>
+          <tr><td>Предел</td><td><code>\lim_{x \to 0}</code></td><td><span class="mini-math" data-tex="\lim_{x \to 0}"></span></td></tr>
+          <tr><td>Производная</td><td><code>f'(x)</code>, <code>\frac{df}{dx}</code></td><td><span class="mini-math" data-tex="\frac{df}{dx}"></span></td></tr>
+          <tr><td>Частная производная</td><td><code>\frac{\partial f}{\partial x}</code></td><td><span class="mini-math" data-tex="\frac{\partial f}{\partial x}"></span></td></tr>
+          <tr><td>Греческие буквы</td><td><code>\alpha, \beta, \lambda, \varepsilon, \Delta</code></td><td><span class="mini-math" data-tex="\alpha, \beta, \lambda, \varepsilon, \Delta"></span></td></tr>
+          <tr><td>Матрица</td><td><code>\begin{pmatrix} a &amp; b \\ c &amp; d \end{pmatrix}</code></td><td><span class="mini-math" data-tex="\begin{pmatrix} a &amp; b \\ c &amp; d \end{pmatrix}"></span></td></tr>
+          <tr><td>Система</td><td><code>\begin{cases} x+y=1 \\ x-y=0 \end{cases}</code></td><td><span class="mini-math" data-tex="\begin{cases} x+y=1 \\ x-y=0 \end{cases}"></span></td></tr>
+          <tr><td>Выравнивание</td><td><code>\begin{aligned} a &amp;= b+c \\ d &amp;= e \end{aligned}</code></td><td><span class="mini-math" data-tex="\begin{aligned} a &amp;= b+c \\ d &amp;= e \end{aligned}"></span></td></tr>
+        </tbody>
+      </table>
+
+      <h3>Графики</h3>
+      <p>Блок кода с языком <code>plot</code> превращается в интерактивный график:</p>
+      <pre><code>```plot
+f(x) = x^3 - 2x - 5
+g(x) = 3x^2 - 2
+x: -3..3
+y: -8..8
+title: Функция и производная
+```
+
+```plot
+points: (0, 1); (1, 2.7); (2, 7.4)
+f(x) = exp(x)
+x: -0.5..3.2
+title: Точки и экспонента
+```</code></pre>
+      <ul>
+        <li>Функции: <code>sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, exp, ln, log, log2, sqrt, cbrt, abs, sign, floor, ceil, round, min, max, pow</code>.</li>
+        <li>Константы: <code>pi</code>, <code>e</code>; можно задавать свои: <code>a = 1.5</code>.</li>
+        <li>Диапазон по <code>y</code> можно не указывать — подберётся автоматически.</li>
+        <li>В графике: колесо — масштаб, перетаскивание — сдвиг, двойной клик — сброс, кнопка PNG — сохранить картинку.</li>
+        <li>Точки задаются через точку с запятой: <code>(x, y); (x, y)</code>.</li>
+      </ul>
+
+      <h3>Калькулятор</h3>
+      <ul>
+        <li>Кнопка «Калькулятор» на панели или <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd>.</li>
+        <li>Операции: <code>+ − * / ^ %</code> и скобки. Функции: <code>sin, cos, tan, sqrt, ln, log, exp, abs</code> и другие.</li>
+        <li>Константы: <code>pi</code>, <code>e</code>. Дробная часть — через точку: <code>1.5</code>.</li>
+        <li>«Вставить ответ» переносит результат в конспект в позицию курсора.</li>
+      </ul>
+
+      <h3>Текст</h3>
+      <table>
+        <thead><tr><th>Что нужно</th><th>Как написать</th></tr></thead>
+        <tbody>
+          <tr><td>Заголовок</td><td><code>## Раздел</code></td></tr>
+          <tr><td>Жирный / курсив</td><td><code>**жирный**</code> / <code>*курсив*</code></td></tr>
+          <tr><td>Список</td><td><code>- пункт</code></td></tr>
+          <tr><td>Нумерация</td><td><code>1. пункт</code></td></tr>
+          <tr><td>Цитата</td><td><code>&gt; текст</code></td></tr>
+          <tr><td>Код</td><td><code>`код`</code></td></tr>
+          <tr><td>Таблица</td><td><code>| a | b |</code> + строка <code>| --- | --- |</code></td></tr>
+          <tr><td>Ссылка</td><td><code>[текст](https://…)</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3>Горячие клавиши</h3>
+      <table>
+        <tbody>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>N</kbd></td><td>новый конспект</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>сохранить сейчас</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>E</kbd></td><td>экспорт в PDF</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>M</kbd></td><td>формула в строке</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd></td><td>формула отдельной строкой</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd></td><td>график</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd></td><td>палитра формул</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd></td><td>конструктор записи</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd></td><td>калькулятор</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>F</kbd></td><td>поиск в тексте конспекта</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>1</kbd> / <kbd>2</kbd> / <kbd>3</kbd></td><td>редактор / пополам / чтение</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd></td><td>сменить тему</td></tr>
+          <tr><td><kbd>F1</kbd></td><td>эта шпаргалка</td></tr>
+        </tbody>
+      </table>
+
+      <p class="muted">Конспекты — обычные Markdown-файлы в папке «Документы\Численные методы». Их можно открыть любым редактором, а формулы при необходимости перенести в Word или LaTeX.</p>
+    </div>
+  </div>
+</div>
+
+<div id="builder-modal" class="modal hidden" aria-hidden="true">
+  <div class="modal-backdrop" data-close="builder"></div>
+  <div class="modal-card builder-card" role="dialog" aria-modal="true" aria-labelledby="builder-title">
+    <div class="modal-head">
+      <h2 id="builder-title">Конструктор записи</h2>
+      <button class="icon-btn" type="button" data-close="builder" title="Закрыть">×</button>
+    </div>
+    <div class="builder-tabs" id="builder-tabs">
+      <button type="button" data-group="formula" class="active">Формулы</button>
+      <button type="button" data-group="plot">График</button>
+      <button type="button" data-group="table">Таблица</button>
+    </div>
+    <div class="builder-body">
+      <div class="builder-list" id="builder-list"></div>
+      <div class="builder-main">
+        <div class="builder-fields" id="builder-fields"></div>
+        <div class="builder-preview-wrap">
+          <div class="builder-preview-label">Предпросмотр</div>
+          <div class="builder-preview" id="builder-preview"></div>
+        </div>
+        <div class="builder-actions">
+          <button type="button" id="builder-insert" class="primary-btn">Вставить</button>
+          <button type="button" id="builder-insert-block" class="ghost-btn">Вставить блоком</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="calc" class="calc hidden" aria-hidden="true">
+  <div class="calc-head">
+    <strong>Калькулятор</strong>
+    <button id="calc-close" class="icon-btn" type="button" title="Закрыть">×</button>
+  </div>
+  <div class="calc-display">
+    <input id="calc-expr" type="text" autocomplete="off" spellcheck="false"
+           placeholder="2 + 2*3 · sqrt(16) · sin(pi/2)">
+    <div id="calc-result" class="calc-result">= 0</div>
+  </div>
+  <div class="calc-funcs">
+    <button type="button" data-insert="sin(">sin</button>
+    <button type="button" data-insert="cos(">cos</button>
+    <button type="button" data-insert="tan(">tan</button>
+    <button type="button" data-insert="ln(">ln</button>
+    <button type="button" data-insert="log(">log</button>
+    <button type="button" data-insert="exp(">exp</button>
+    <button type="button" data-insert="abs(">abs</button>
+  </div>
+  <div class="calc-keys" id="calc-keys">
+    <button type="button" class="calc-key" data-action="clear">C</button>
+    <button type="button" class="calc-key" data-action="back">⌫</button>
+    <button type="button" class="calc-key" data-insert="(">(</button>
+    <button type="button" class="calc-key" data-insert=")">)</button>
+    <button type="button" class="calc-key" data-insert="/">÷</button>
+
+    <button type="button" class="calc-key" data-insert="7">7</button>
+    <button type="button" class="calc-key" data-insert="8">8</button>
+    <button type="button" class="calc-key" data-insert="9">9</button>
+    <button type="button" class="calc-key" data-insert="*">×</button>
+    <button type="button" class="calc-key" data-insert="^">^</button>
+
+    <button type="button" class="calc-key" data-insert="4">4</button>
+    <button type="button" class="calc-key" data-insert="5">5</button>
+    <button type="button" class="calc-key" data-insert="6">6</button>
+    <button type="button" class="calc-key" data-insert="-">−</button>
+    <button type="button" class="calc-key" data-insert="sqrt(">√</button>
+
+    <button type="button" class="calc-key" data-insert="1">1</button>
+    <button type="button" class="calc-key" data-insert="2">2</button>
+    <button type="button" class="calc-key" data-insert="3">3</button>
+    <button type="button" class="calc-key" data-insert="+">+</button>
+    <button type="button" class="calc-key" data-insert="pi">π</button>
+
+    <button type="button" class="calc-key" data-insert="0">0</button>
+    <button type="button" class="calc-key" data-insert=".">.</button>
+    <button type="button" class="calc-key" data-insert="%">%</button>
+    <button type="button" class="calc-key accent" data-action="equals">=</button>
+    <button type="button" class="calc-key" data-insert="e">e</button>
+  </div>
+  <div class="calc-actions">
+    <button type="button" id="calc-insert-result" class="primary-btn">Вставить ответ</button>
+    <button type="button" id="calc-insert-expr" class="ghost-btn">Вставить выражение</button>
+    <button type="button" id="calc-clear-history" class="ghost-btn" title="Очистить историю">Очистить</button>
+  </div>
+  <div class="calc-history" id="calc-history"></div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="vendor/katex.min.js"></script>
+<script src="vendor/marked.umd.js"></script>
+<script src="vendor/purify.min.js"></script>
+<script src="plot.js"></script>
+<script src="renderer.js"></script>
+</body>
+</html>
